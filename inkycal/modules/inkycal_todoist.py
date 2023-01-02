@@ -8,6 +8,7 @@ Copyright by aceisace
 
 from inkycal.modules.template import inkycal_module
 from inkycal.custom import *
+from datetime import datetime
 
 try:
   from todoist_api_python.api import TodoistAPI
@@ -135,11 +136,19 @@ class Todoist(inkycal_module):
     simplified = [
         {
         'name':task.content,
-        'due':task.due.string if task.due != None else "",
+        'due':task.due.date if task.due != None else "",
         'priority':task.priority,
         'project':all_projects[ task.project_id ] if task.project_id in all_projects else "deleted"
         }
         for task in tasks]
+
+    # Make sure tasks are ordered by due date    
+    simplified = sorted(simplified, key=lambda i: i['due'])        
+
+    # Convert the dates to an easier to ready format
+    for x in simplified:
+      if x['due'] != "":
+        x['due'] = datetime.strptime(x['due'],'%Y-%m-%d').strftime("%a %b %d")
 
     # remove groups that have been deleted 
     # - not sure if this is needed anymore or exactly how to do it --dealyllama
@@ -173,11 +182,11 @@ class Todoist(inkycal_module):
           if cursor < len(line_positions):
             line_x, line_y = line_positions[cursor]
 
-            # Add todo project name
-            write(
-              im_colour, line_positions[cursor],
-              (project_width, line_height),
-              todo['project'], font=self.font, alignment='left')
+            # # Add todo project name
+            # write(
+            #   im_colour, line_positions[cursor],
+            #   (project_width, line_height),
+            #   todo['project'], font=self.font, alignment='left')
 
             # Add todo due if not empty
             if todo['due'] != "":
@@ -185,7 +194,8 @@ class Todoist(inkycal_module):
                 im_black,
                 (line_x + project_width, line_y),
                 (due_width, line_height),
-                todo['due'], font=self.font, alignment='left')
+                todo['due'], 
+                font=self.font, alignment='left')
 
             # Add todo name
             write(
