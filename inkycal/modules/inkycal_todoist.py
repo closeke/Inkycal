@@ -6,6 +6,7 @@ import arrow
 
 from inkycal.modules.template import inkycal_module
 from inkycal.custom import *
+from datetime import datetime, timedelta
 
 from todoist_api_python.api import TodoistAPI
 
@@ -125,12 +126,27 @@ class Todoist(inkycal_module):
         simplified = [
             {
                 'name': task.content,
-                'due': arrow.get(task.due.date, "YYYY-MM-DD").format("D-MMM-YY") if task.due else "",
+                #'due': arrow.get(task.due.date, "YYYY-MM-DD").format("D-MMM-YY") if task.due else "",
+                'due': task.due.date if task.due != None else "",
                 'priority': task.priority,
                 'project': filtered_project_ids_and_names[task.project_id]
             }
             for task in all_active_tasks
         ]
+
+        # Sort tasks by due date
+        simplified = sorted(simplified, key=lambda i: i['due'])
+
+        # Only keep to-do's due the next 30 days or with no due date
+        thirty_days_out = datetime.today() + timedelta(days=30)
+        print(thirty_days_out)
+        simplified = [x for x in simplified if datetime.strptime(x['due'],'%Y-%m-%d') <= thirty_days_out]        
+        print(simplified)
+
+        # Convert the dates to an easier to read format
+        for x in simplified:
+            if x['due'] != "":
+                x['due'] = datetime.strptime(x['due'],'%Y-%m-%d').strftime("%a %b %d")
 
         logger.debug(f'simplified: {simplified}')
 
@@ -165,13 +181,6 @@ class Todoist(inkycal_module):
                 for todo in todos:
                     if cursor < max_lines:
                         line_x, line_y = line_positions[cursor]
-
-                        if todo['project']:
-                            # Add todos project name
-                            write(
-                                im_colour, line_positions[cursor],
-                                (project_offset, line_height),
-                                todo['project'], font=self.font, alignment='left')
 
                         # Add todos due if not empty
                         if todo['due']:
