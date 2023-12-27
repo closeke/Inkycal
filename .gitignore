@@ -1,3 +1,6 @@
+# Custom ignores
+my_inkycal_settings.json
+
 # idea
 .idea
 
